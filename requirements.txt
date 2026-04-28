@@ -1,0 +1,11 @@
+torch
+numpy
+transformers
+sentencepiece
+fastapi
+uvicorn
+flask
+matplotlib
+pillow
+tqdm
+scipy
