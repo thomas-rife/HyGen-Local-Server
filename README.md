@@ -18,9 +18,12 @@ inference while procedural preprocessing and package export remain on the CPU.
 | ----------------------- | ----------------- | --------------- | ---------------------- |
 | Apple M5 Max            | CPU               | 121 seconds     | 1.0x                   |
 | Apple M5 Max            | MPS               | 18 seconds      | 6.7x                   |
-| NVIDIA GeForce RTX 3080 | CUDA              | Pending         | Pending                |
+| NVIDIA GeForce RTX 3080 | CUDA              | 34 seconds      | 3.6x                   |
 
 The MPS run was 103 seconds faster, approximately an 85% reduction in total time.
+The RTX 3080 also recorded **21 seconds for generation only**, separate from its
+34-second end-to-end result. The generation-only time has a different timing
+boundary and should not be compared directly with the end-to-end rows above.
 
 ### Model Size
 
@@ -58,11 +61,12 @@ Recorded generation output:
 [pipeline] primitive=rolling     modifiers=-                         ocean=-      rivers=0  world=640px  via=fallback base_shape=rolling_hills playable=(512,214) target=66.00 protect=1.00 water_cells=0 river_cells=0 feature_water=0 feature_playable=758 seed=100241644 img2img=0.40 repair=0.45  raw=(46.47,77.60) norm=(-0.650,-0.430)
 ```
 
-### RTX 3080 Results To Add
+### RTX 3080 Results
 
 | Measurement                      | Result  |
 | -------------------------------- | ------- |
-| End-to-end full-map time         | Pending |
+| End-to-end full-map time         | 34 seconds |
+| Generation-only time            | 21 seconds |
 | CPU model / GPU VRAM capacity    | Pending |
 | Python / PyTorch / CUDA versions | Pending |
 | Sampling steps / CFG scale       | Pending |
