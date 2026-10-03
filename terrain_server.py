@@ -114,7 +114,7 @@ class _Pipeline:
     """Loads models once and runs generation jobs synchronously.
 
     Thread-safe via a single mutex: only one generation at a time, since the
-    underlying CUDA context is shared.
+    loaded models are shared.
     """
 
     def __init__(self, vae_ckpt: str, unet_ckpt: str, controlnet_ckpt: str,
