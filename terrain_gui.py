@@ -242,7 +242,9 @@ class GenerationWorker:
             format_validation_lines,
         )
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        # device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = "mps" if torch.mps.is_available() else "cpu"
+
         self.q.put(("status", f"Device: {device}"))
 
         ckpt_paths = (

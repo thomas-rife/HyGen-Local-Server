@@ -28,7 +28,9 @@ import shutil
 import sys
 import tempfile
 import threading
+import time
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -340,6 +342,22 @@ def _run_generate_job(pipeline: _Pipeline, store: _PackageStore,
                       payload: dict, base_url: str) -> dict:
     """Shared request handler. Accepts a dict payload, returns the response dict."""
     job_id = uuid.uuid4().hex[:12]
+    started = time.perf_counter()
+    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    print(f"[generation {job_id}] started at {timestamp}", flush=True)
+    try:
+        result = _generate_job(pipeline, store, payload, base_url, job_id)
+    except Exception as error:
+        elapsed = time.perf_counter() - started
+        print(f"[generation {job_id}] failed after {elapsed:.2f}s: {error}", flush=True)
+        raise
+    elapsed = time.perf_counter() - started
+    print(f"[generation {job_id}] completed in {elapsed:.2f}s", flush=True)
+    return result
+
+
+def _generate_job(pipeline: _Pipeline, store: _PackageStore,
+                  payload: dict, base_url: str, job_id: str) -> dict:
     out_dir = store.allocate_dir(job_id)
 
     directional = {
