@@ -1,7 +1,7 @@
 # HyGen Local Server
 
-A local, prompt-driven terrain generation service for the BattleHeartClone
-Hytale plugin. It builds a procedural macro heightmap, refines it with a
+A local, prompt-driven terrain generation service for the HyGen
+Hytale mod. It builds a procedural macro heightmap, refines it with a
 text-conditioned diffusion model, and exports a package that the game server
 downloads and places into a new world.
 
@@ -11,49 +11,45 @@ on first use if they are not already cached.
 
 ## Full-Map Benchmarks
 
-These are user-measured **end-to-end results for a full 640 x 640 map**, not
-isolated neural-network inference timings. The MPS result uses GPU-accelerated
+These are user-measured **end-to-end results for a full 640 x 640 map**. The MPS result uses GPU-accelerated
 inference while procedural preprocessing and package export remain on the CPU.
 
-| Hardware | Inference backend | End-to-end time | Speedup vs. M5 Max CPU |
-| --- | --- | --- | --- |
-| Apple M5 Max | CPU | 121 seconds | 1.0x |
-| Apple M5 Max | MPS | 18 seconds | 6.7x |
-| NVIDIA GeForce RTX 3080 | CUDA | Pending | Pending |
+| Hardware                | Inference backend | End-to-end time | Speedup vs. M5 Max CPU |
+| ----------------------- | ----------------- | --------------- | ---------------------- |
+| Apple M5 Max            | CPU               | 121 seconds     | 1.0x                   |
+| Apple M5 Max            | MPS               | 18 seconds      | 6.7x                   |
+| NVIDIA GeForce RTX 3080 | CUDA              | Pending         | Pending                |
 
 The MPS run was 103 seconds faster, approximately an 85% reduction in total time.
-These measurements were supplied by the project author and have not been
-independently reproduced here. Cold/warm model-loading state, software versions,
-and sampling-step count were not recorded with the supplied results.
 
 ### Model Size
 
 | Terrain model | Parameters |
-| --- | --- |
-| VAE | 3.8M |
-| U-Net | 55.9M |
-| ControlNet | 31.6M |
-| **Total** | **91.3M** |
+| ------------- | ---------- |
+| VAE           | 3.8M       |
+| U-Net         | 55.9M      |
+| ControlNet    | 31.6M      |
+| **Total**     | **91.3M**  |
 
 Counts are rounded and cover the three terrain models only. T5-small is a separate
 text encoder and is not included in that total.
 
 ### Benchmark World
 
-| Setting | Recorded value |
-| --- | --- |
-| World size | 640 x 640 heightmap cells (409,600 total) |
-| Primitive / base shape | `rolling` / `rolling_hills` |
-| Prompt parser route | `fallback` |
-| Seed | `100241644` |
-| img2img strength | `0.40` |
-| Constraint repair strength | `0.45` |
-| Playable center | `(512, 214)` |
-| Playable target height | `66.00` |
-| Raw height range | `46.47` to `77.60` |
-| Normalized height range | `-0.650` to `-0.430` |
-| Macro validation | Passed, zero errors and zero warnings |
-| Water / rivers | None |
+| Setting                    | Recorded value                            |
+| -------------------------- | ----------------------------------------- |
+| World size                 | 640 x 640 heightmap cells (409,600 total) |
+| Primitive / base shape     | `rolling` / `rolling_hills`               |
+| Prompt parser route        | `fallback`                                |
+| Seed                       | `100241644`                               |
+| img2img strength           | `0.40`                                    |
+| Constraint repair strength | `0.45`                                    |
+| Playable center            | `(512, 214)`                              |
+| Playable target height     | `66.00`                                   |
+| Raw height range           | `46.47` to `77.60`                        |
+| Normalized height range    | `-0.650` to `-0.430`                      |
+| Macro validation           | Passed, zero errors and zero warnings     |
+| Water / rivers             | None                                      |
 
 Recorded generation output:
 
@@ -64,15 +60,15 @@ Recorded generation output:
 
 ### RTX 3080 Results To Add
 
-| Measurement | Result |
-| --- | --- |
-| End-to-end full-map time | Pending |
-| CPU model / GPU VRAM capacity | Pending |
+| Measurement                      | Result  |
+| -------------------------------- | ------- |
+| End-to-end full-map time         | Pending |
+| CPU model / GPU VRAM capacity    | Pending |
 | Python / PyTorch / CUDA versions | Pending |
-| Sampling steps / CFG scale | Pending |
-| Cold or warm model cache | Pending |
-| Number of runs / timing method | Pending |
-| Validation result | Pending |
+| Sampling steps / CFG scale       | Pending |
+| Cold or warm model cache         | Pending |
+| Number of runs / timing method   | Pending |
+| Validation result                | Pending |
 
 For a useful comparison, keep the prompt, seed, checkpoints, map dimensions,
 sampling settings, and postprocessing settings the same. Record whether model
@@ -90,7 +86,41 @@ loading and Hytale download/placement are included in the timing boundary.
 
 The neural models use the selected PyTorch device. Macro construction,
 validation, crossfade stitching, and package construction use CPU processing.
-Hytale world/block placement is handled by BattleHeartClone, not this server.
+Hytale world/block placement is handled by HyGen, not this server.
+
+## Repository Layout
+
+```text
+HyGen-Local-Server/
+  models/                     Git LFS terrain checkpoints
+    vae_ema_final.pt
+    unet_ema_final.pt
+    controlnet_ema_final.pt
+  hygen/                      Python implementation package
+    checkpoints.py            Shared repository-relative model discovery
+    terrain_server.py         HTTP service and pipeline orchestration
+    terrain_gui.py            Optional desktop GUI
+    generate_terrain.py       Legacy CLI, model loading, and text encoding
+    generate_terrain_img2img.py
+    terrain_cldm.py           Neural model definitions
+    terrain_dataloader.py     Height normalization and data utilities
+    terrain_macro.py          Procedural macro generation
+    macro_prompt_parser.py
+    terrain_scene_adapter.py
+    terrain_validation.py
+    terrain_package.py        Java-facing package export
+  tests/                      Regression tests (no model weights needed)
+  terrain_server.py           Backward-compatible server launcher
+  terrain_gui.py              Backward-compatible GUI launcher
+  generate_terrain.py         Backward-compatible legacy CLI launcher
+  requirements.txt
+  README.md
+```
+
+Use `outputs/` for manually exported previews or packages; it is ignored by Git.
+Server-generated packages still default to the system temporary directory.
+The root launch commands are unchanged. Checkpoints resolve relative to this
+repository, not your current working directory.
 
 ## Setup
 
@@ -110,17 +140,21 @@ git lfs pull
 The following files must contain actual model weights, not Git LFS pointer text:
 
 ```text
-vae_ema_final.pt
-unet_ema_final.pt
-controlnet_ema_final.pt
+models/vae_ema_final.pt
+models/unet_ema_final.pt
+models/controlnet_ema_final.pt
 ```
 
-The server discovers checkpoints under its working directory. Load only trusted
-checkpoints; the loader uses PyTorch deserialization with `weights_only=False`.
+The server and GUI discover checkpoints in the repository's `models/` directory.
+For another checkpoint directory, run
+`python terrain_server.py --models_dir /path/to/checkpoints`. The legacy CLI
+also defaults to `models/` and accepts explicit `--vae_ckpt`, `--unet_ckpt`, and
+`--controlnet_ckpt` paths. Load only trusted checkpoints; the loader uses PyTorch
+deserialization with `weights_only=False`.
 
 ### Windows / NVIDIA
 
-Create a new environment; do not copy a macOS virtual environment to Windows:
+Create a new environment:
 
 ```powershell
 py -m venv .venv
@@ -129,9 +163,8 @@ py -m venv .venv
 
 Install a CUDA-enabled PyTorch build using the command from the
 [official installation selector](https://pytorch.org/get-started/locally/)
-for your GPU/driver. Use `.\.venv\Scripts\python.exe -m pip` in place of the
-selector's `pip` or `pip3` command to target this environment. Then install the
-remaining dependencies:
+for your GPU/driver, then install the remaining dependencies using the same
+environment:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
@@ -139,8 +172,7 @@ remaining dependencies:
 .\.venv\Scripts\python.exe terrain_server.py --device cuda
 ```
 
-`CUDA: True` confirms that PyTorch can see a CUDA device. An explicit
-`--device cuda` does not silently fall back to CPU if CUDA is unavailable.
+`CUDA: True` confirms that PyTorch can see a CUDA device.
 
 ### macOS / Linux
 
@@ -174,12 +206,12 @@ The server listens on `http://127.0.0.1:8080` by default. FastAPI/uvicorn is
 preferred, with Flask as a fallback. Models are loaded lazily on the first
 generation request, cached between requests, and generation jobs are serialized.
 
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /health` | HTTP liveness check; does not load or test models |
-| `POST /generate` | Generate a package and return its job ID and download URLs |
-| `GET /package/{job_id}/{filename}` | Download a generated package file |
-| `DELETE /package/{job_id}` | Remove that job's package files |
+| Endpoint                           | Purpose                                                    |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `GET /health`                      | HTTP liveness check; does not load or test models          |
+| `POST /generate`                   | Generate a package and return its job ID and download URLs |
+| `GET /package/{job_id}/{filename}` | Download a generated package file                          |
+| `DELETE /package/{job_id}`         | Remove that job's package files                            |
 
 Packages are written to `terrain_packages` inside the system temporary directory
 unless `--storage_dir` overrides it. Other options include `--host`, `--port`, and
@@ -188,15 +220,15 @@ unless `--storage_dir` overrides it. Other options include `--host`, `--port`, a
 Keep the default loopback binding for local use. The API has no authentication;
 do not expose it publicly without adding appropriate access controls.
 
-### BattleHeartClone Connection
+### HyGen Connection
 
-Run this service alongside the Hytale server. In BattleHeartClone's
+Run this service alongside the Hytale server. In HyGen's
 `run/universe/battleheart-ai-terrain.json`, set `pythonEndpoint` to
 `http://localhost:8080` when both servers run on the same computer. The Java
 plugin requests a package, downloads it, places terrain/water/decorations, and
 prepares the generated world for play.
 
-Cloning this repository does not install Hytale or copy BattleHeartClone's saved
+Cloning this repository does not install Hytale or copy HyGen's saved
 worlds. Those belong to the separate game-server setup.
 
 ### Example Generation Request
@@ -211,7 +243,7 @@ record of the benchmark invocation.
   "seed": 100241644,
   "grid_size": 3,
   "overlap": 64,
-  "img2img_strength": 0.40,
+  "img2img_strength": 0.4,
   "repair_strength": 0.45,
   "num_steps": 30,
   "cfg_scale": 5.0
@@ -221,21 +253,17 @@ record of the benchmark invocation.
 For 256-cell chunks, a 3 x 3 grid with 64-cell overlap produces a 640 x 640 map:
 `256 + (3 - 1) * (256 - 64) = 640`.
 
-## Timing Logs
+## Development
 
-Each `/generate` request prints a UTC start timestamp and elapsed seconds to
-the Python server console. For example:
+Run the regression tests from the repository root:
 
-```text
-[generation <job-id>] started at <UTC timestamp>
-[generation <job-id>] completed in <elapsed>s
+```sh
+python -B -m unittest discover -s tests -v
 ```
 
-Failed requests print `failed after <elapsed>s` and preserve the original error.
-The server timer covers the request through package generation, including model
-loading on a cold request and any wait for another generation. It does **not**
-include subsequent HTTP downloads, Hytale terrain placement, or teleportation.
-Restart the Python server after source changes to load the new code.
+Tests use temporary files and mocked neural models; they do not start the HTTP
+service, download T5, or run full terrain inference. Python implementations can
+also be launched as modules, for example `python -m hygen.terrain_server`.
 
 ## Troubleshooting
 

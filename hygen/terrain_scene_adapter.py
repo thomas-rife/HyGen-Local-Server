@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, Optional, Tuple
 import numpy as np
 from scipy import ndimage
 
-from terrain_dataloader import normalize_height
+from hygen.terrain_dataloader import normalize_height
 
 
 _PARSER_TO_MACRO_SHAPE = {

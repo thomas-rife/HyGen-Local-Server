@@ -1,5 +1,5 @@
 """
-generate_terrain.py — Phase 4 inference, img2img edition.
+generate_terrain_img2img.py — Phase 4 inference, img2img edition.
 
 Differences from the original pipeline:
 
